@@ -7,4 +7,4 @@
 UVic's current public [class schedule search](https://www.uvic.ca/BAN1P/bwckschd.p_disp_dyn_sched) is archaic, and their schedule building tools are worse still. The first step towards developing better third party options for students is obtaining a detailed and accurate course database.
 
 ## Usage
-The web scraping script is intended to by run via command line in a python 3.x environment with the dependencies specified in *requirements.txt* installed via pip.
+The web scraping script is intended to by run via command line in a python 3.x environment with the dependencies specified in *requirements.txt* installed via pip. An example .json output file, 'example.json' is included in the repo.
