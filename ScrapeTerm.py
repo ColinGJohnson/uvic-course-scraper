@@ -12,13 +12,16 @@ debug = False;
 def main():
 	
     # get number of terms to collect data for
-	target_term = input("Collect data from which term? eg. 201901 (-1 to collect all): ")
+	target_term = input("Collect data from which term? eg. 201901 ('all' to collect all): ")
 
 	# get file name
 	database_name = input("enter a database name (WILL BE OVERWRITTEN!): ")
 
 	# collect data for those terms
-	courseData = scrapeTerms(requested_term=target_term)
+	if (target_term.lower() == 'all'):
+		courseData = scrapeTerms(num_terms=-1)
+	else:
+		courseData = scrapeTerms(requested_term=target_term)
 
 	# save the data in json format
 	filename = database_name + '.json'
@@ -44,17 +47,18 @@ def scrapeTerms(num_terms=1, requested_term="", saveHtml=False):
 	# create a new browser to navigate search forms
 	browser = RoboBrowser(parser='html.parser')
 
-	# open course search page
+	# open course search page and get term options
 	browser.open('https://www.uvic.ca/BAN1P/bwckschd.p_disp_dyn_sched')
+	term_options = browser.find_all("option")
 
 	if (debug): 
 		found_terms = []
-		for term_option in browser.find_all("option"):
+		for term_option in term_options:
 			found_terms.append(term_option['value'])
 		print("found terms: " + str(found_terms))
 
 	# iterate through data for all terms
-	for term_option in browser.find_all("option"):
+	for term_option in term_options:
 
 		# isolate term value
 		term = term_option['value']
@@ -73,31 +77,21 @@ def scrapeTerms(num_terms=1, requested_term="", saveHtml=False):
 			num_terms -= 1
 			print('COLLECTING FROM TERM ' + term + ". \n")
 		
-		# get the search form (there is only one form on this page)
+		# get, fill, and submit the search form (there is only one form on this page)
 		term_form = browser.get_form()
-
-		# fill the form
 		term_form['p_term'].value = term
-
-		# submit the form
 		browser.submit_form(term_form)
 
 		# get a list of all available subjects
 		subject_dropdown = browser.find('select', attrs={"name": "sel_subj"})
 		for subject_option in subject_dropdown.find_all("option"):
 
-			print("Navigating to next search result.")
-
 			# isolate subject abbreviation
 			subject = subject_option['value']
 
-			# get the class schedule form
+			# get, fill, and submit the class schedule form
 			schedule_form = browser.get_form()
-
-			# fill the form
 			schedule_form.fields.getlist('sel_subj')[1].value = subject
-
-			# submit the form
 			browser.submit_form(schedule_form)
 
 			# save the the search result page
@@ -119,16 +113,14 @@ def scrapeTerms(num_terms=1, requested_term="", saveHtml=False):
 			for subject_course in subject_courses:
 				courses.append(subject_course)
 
-			#return courses # TODO: REMOVE THIS
-
 			# go back to the class search form
 			browser.back(1)
 
 		# go back to the term selection form
 		browser.back(1)
 
-		# return from scrapeTerms
-		return courses
+	# return from scrapeTerms
+	return courses
 
 
 '''Returns a list of dictionaries containing information for each course listed in the given html file'''
@@ -320,7 +312,7 @@ def parse(html, term):
 	print('Identified {} course listing(s).\n'.format(len(courses)))
 	return courses
 
-# TODO: LEGACY SQLITE FUNCTION, STILL NEEDS TO BE MAPPED TO JSON OUTPUT
+# TODO: LEGACY SQLITE FUNCTION, STILL NEEDS TO BE MAPPED TO NEW JSON OUTPUT FORMAT
 def outputDatabase(database_name, data):
 
 	# open course database connection
