@@ -1,45 +1,55 @@
-from os import listdir
-from datetime import datetime
+import argparse
 import re
 import json
-
 import bs4
+from os import listdir
+from os import makedirs
+from datetime import datetime
 from bs4 import BeautifulSoup
 from robobrowser import RoboBrowser
 
-debug = False;
+debug = False
 
 def main():
-	
-    # get number of terms to collect data for
-	target_term = input("Collect data from which term? eg. 201901 ('all' to collect all): ")
 
-	# get file name
-	database_name = input("enter a database name (WILL BE OVERWRITTEN!): ")
+	# parse command line arguments
+	parser = argparse.ArgumentParser(
+		description=("Scrape course information from the UVic website. "
+		"If a specific term is not specified, the most recent term will be scraped."))
+	parser.add_argument("--term", 
+		help=("First month of the term to scrape formatted as YYYYMM, "
+		"e.g. 201901. Second term = 01, First Term = 09, Summer Session = 05."), 
+		type=int, required=True)
+	parser.add_argument("--outfile",
+		help="Output file name (will be overwritten). Defaults to 'term.json'")
+	parser.add_argument("--savehtml",
+		help="Save pages processed by the parser?", 
+		type=bool, default=False)
+	parser.add_argument("--alternate",
+		help="Save the course data in an alternative and less processed format?", 
+		type=bool, default=False)
+	args = parser.parse_args()
 
-	# collect data for those terms
-	if (target_term.lower() == 'all'):
-		courseData = scrapeTerms(num_terms=-1)
-	else:
-		courseData = scrapeTerms(requested_term=target_term)
+	# collect data for the requested term
+	courses = scrapeTerm(requested_term=str(args.term), save_html=args.savehtml)
 
 	# save the data in json format
-	filename = database_name + '.json'
+	filename = args.outfile if args.outfile else f"{args.term}.json"
 	with open(filename, 'w') as file:
 		try:
-			file.write(json.dumps(courseData, indent=4))
-			print(filename + ' saved')
+			file.write(json.dumps(courses, indent=4))
+			print(f"Saved course data as '{filename}.'")
 		except Exception as e:
-			print("Could not save file! ", e)
-
-	# print completion message
-	print('page collection complete')
+			print("Error while saving course data. ", e)
 
 	# end of main function
 	return
 
-
-def scrapeTerms(num_terms=1, requested_term="", saveHtml=False):
+'''
+Scrapes course information for a specific term, or number of terms by traversing UVic's
+course search interface and passing search result pages to parse().
+'''
+def scrapeTerm(requested_term, save_html):
 
 	# define a list for course information
 	courses = []
@@ -63,19 +73,9 @@ def scrapeTerms(num_terms=1, requested_term="", saveHtml=False):
 		# isolate term value
 		term = term_option['value']
 
-		# skip empty form values
-		if len(term) == 0:
+		# scrape only the requested term
+		if term != requested_term:
 			continue
-
-		# collect only the requested amount of data
-		if (requested_term != "" and term != requested_term):
-			continue
-
-		if num_terms == 0:
-			break
-		else:
-			num_terms -= 1
-			print('COLLECTING FROM TERM ' + term + ". \n")
 		
 		# get, fill, and submit the search form (there is only one form on this page)
 		term_form = browser.get_form()
@@ -94,24 +94,22 @@ def scrapeTerms(num_terms=1, requested_term="", saveHtml=False):
 			schedule_form.fields.getlist('sel_subj')[1].value = subject
 			browser.submit_form(schedule_form)
 
-			# save the the search result page
+			# save the the search result page (if requested)
 			result = str(browser.parsed())
 
-			if saveHtml:
-				filename = 'ResultPages\\' + term + subject + '.html'
+			if save_html:
+				makedirs("./html/", exist_ok=True)
+				filename = 'html/' + term + subject + '.html'
 				with open(filename, 'w') as file:
 					try:
 						file.write(result)
-						print(filename + ' downloaded')
+						print(f"Saved '{filename}'")
 					except Exception as e:
-						print("Could not save file! ", e)
+						print(f"Failed to save '{filename}'", e)
 
 			# parse the resulting html string
-			print('Parsing ' + term + subject + '.html ... ', end="")
-			subject_courses = parse(result, term)
-
-			for subject_course in subject_courses:
-				courses.append(subject_course)
+			print(f"Parsing {term} {subject}... ", end="")
+			courses += parse(result, term)
 
 			# go back to the class search form
 			browser.back(1)
@@ -119,11 +117,19 @@ def scrapeTerms(num_terms=1, requested_term="", saveHtml=False):
 		# go back to the term selection form
 		browser.back(1)
 
-	# return from scrapeTerms
+	# return a list of courses that were discovered
 	return courses
 
+def convert(courses):
+	return courses
 
-'''Returns a list of dictionaries containing information for each course listed in the given html file'''
+'''
+Returns a list of dictionaries containing information for each course listed in the given HTML file.
+
+Params:
+	html - an HTML document containing search results from UVic's course search webpage.
+	term - the term associated with the courses in the HTML document.
+'''
 def parse(html, term):
 
 	# read current html file into beautifulsoup
@@ -304,52 +310,13 @@ def parse(html, term):
 				previous_course['sections'].append(course['sections'][0])
 				already_found = True
 
-		# add the current course's  data to the list of all course data
+		# add the current course's data to the list of all course data
 		if already_found == False:
 			courses.append(course)
 
 	# return from function
-	print('Identified {} course listing(s).\n'.format(len(courses)))
+	print(f"Identified {len(courses)} course listing(s).")
 	return courses
-
-# TODO: LEGACY SQLITE FUNCTION, STILL NEEDS TO BE MAPPED TO NEW JSON OUTPUT FORMAT
-def outputDatabase(database_name, data):
-
-	# open course database connection
-	conn = sqlite3.connect("{}.db".format(database_name))
-
-	# cursor to execute sqlite3 commands
-	c = conn.cursor() 
-
-	# create lists of items to insert into each database row
-	data1 = []
-	data2 = []
-
-	# insert collected data into courses table
-	try:
-		c.execute("INSERT INTO courses VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", tuple(data1))
-		
-		for row in data2:
-			c.execute("INSERT INTO meeting_times VALUES (?,?,?,?,?,?,?,?)", tuple(row))
-
-	# catch database exceptions
-	except Exception as e:
-		print('SQL error: "{0}"'.format(e))
-
-	# create course databases
-	c.execute('DROP TABLE IF EXISTS courses')
-	c.execute('DROP TABLE IF EXISTS meeting_times')
-	c.execute('CREATE TABLE courses(crn number PRIMARY KEY, name text, subject text, course_code text, section_type text, section_number number, description text, term text, reg_dates text, levels text, attributes text, campus text, schedule_type_alt text, method text, credits text, catalog_entry text)') 
-	c.execute('CREATE TABLE meeting_times(crn number, meeting_type text, meeting_time text, days text, location text, date_range text, schedule_type text, instructor text)') 
-
-	# commit database changes
-	conn.commit()
-
-	# close course database connection
-	conn.close()
-
-	# return from outputDatabase
-	return
 
 # if this file isn't being imported, run automatically 
 if __name__ == "__main__":
