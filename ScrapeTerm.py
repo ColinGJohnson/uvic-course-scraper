@@ -4,9 +4,12 @@ import json
 import bs4
 from os import listdir
 from os import makedirs
-from datetime import datetime
 from bs4 import BeautifulSoup
 from robobrowser import RoboBrowser
+
+from dateutil.rrule import *
+from dateutil.parser import *
+from datetime import *
 
 debug = False
 
@@ -31,19 +34,67 @@ def main():
 	args = parser.parse_args()
 
 	# collect data for the requested term
-	courses = scrapeTerm(requested_term=str(args.term), save_html=args.savehtml)
+	# courses = scrapeTerm(requested_term=str(args.term), save_html=args.savehtml)
+	courses = json.load(open('example.json', 'r'))
+
+	# reformat course data
+	courses_reformatted = convert(courses)
 
 	# save the data in json format
 	filename = args.outfile if args.outfile else f"{args.term}.json"
 	with open(filename, 'w') as file:
 		try:
-			file.write(json.dumps(courses, indent=4))
+			file.write(json.dumps(courses_reformatted, indent=4))
 			print(f"Saved course data as '{filename}.'")
 		except Exception as e:
 			print("Error while saving course data. ", e)
 
 	# end of main function
 	return
+
+'''
+Converts scraped course data into a more useful format e.g. by using RRULEs
+'''
+def convert(courses):
+
+	# browser for following catalog entry links
+	browser = RoboBrowser(parser='html.parser')
+
+	for course in courses:
+
+		# remove term string since it can be generated from the term
+		del course['term_string']
+		print(course["course_title"])
+
+		for i, section in enumerate(course['sections']):
+
+			# associate calendar entry with course rather than section
+			# check for fucked links like "https://www.uvic.cahttp://web.uvic.ca/soci/courses_spring.php"
+			if i == 0:
+				try:
+					browser.open(section['catalog_entry'])
+					catalog_entry = str(browser.parsed())
+					soup = BeautifulSoup(catalog_entry, 'html.parser')
+					calendar_entry_link = soup.find('a', text="entry")
+
+					if (calendar_entry_link):
+						course['calendar_entry'] = calendar_entry_link["href"]
+					print(course['calendar_entry'])
+
+					course['catalog_entry'] = section['catalog_entry']
+					
+				except Exception:
+					print(f"invalid link: {section['catalog_entry']}")
+
+			del section['catalog_entry']
+
+			for meeting in section['meeting_times']:
+				pass
+
+	for course in courses:
+		print(course['course_title'])
+
+	return courses
 
 '''
 Scrapes course information for a specific term, or number of terms by traversing UVic's
@@ -95,21 +146,22 @@ def scrapeTerm(requested_term, save_html):
 			browser.submit_form(schedule_form)
 
 			# save the the search result page (if requested)
-			result = str(browser.parsed())
+			result_html = str(browser.parsed())
 
 			if save_html:
-				makedirs("./html/", exist_ok=True)
-				filename = 'html/' + term + subject + '.html'
+				directory = f"./html/{requested_term}/"
+				makedirs(directory, exist_ok=True)
+				filename = f"{directory}{term}{subject}.html"
 				with open(filename, 'w') as file:
 					try:
-						file.write(result)
+						file.write(result_html)
 						print(f"Saved '{filename}'")
 					except Exception as e:
 						print(f"Failed to save '{filename}'", e)
 
 			# parse the resulting html string
 			print(f"Parsing {term} {subject}... ", end="")
-			courses += parse(result, term)
+			courses += parse(result_html, term)
 
 			# go back to the class search form
 			browser.back(1)
@@ -118,9 +170,6 @@ def scrapeTerm(requested_term, save_html):
 		browser.back(1)
 
 	# return a list of courses that were discovered
-	return courses
-
-def convert(courses):
 	return courses
 
 '''
@@ -195,7 +244,7 @@ def parse(html, term):
 		course['sections'][0]['description'] = description if len(description) > 0 else "No Description"
 
 		# get the catalog entry
-		course['sections'][0]['catalog_entry'] = "{0}{1}".format("https://www.uvic.ca", row_after.find("a")["href"])
+		course['sections'][0]['catalog_entry'] = f"https://www.uvic.ca{row_after.find('a')['href']}"
 
 
 
