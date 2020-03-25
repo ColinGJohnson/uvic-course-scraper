@@ -4,6 +4,7 @@ certifi==2018.10.15
 chardet==3.0.4
 idna==2.7
 python-dateutil==2.8.1
+pytz==2019.3
 requests==2.20.0
 robobrowser==0.5.3
 six==1.11.0
