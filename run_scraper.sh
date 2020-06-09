@@ -2,6 +2,9 @@
 # this should always be set to whatever the "current" term people are resgistering for is.
 export TERM="202005"
 
+# make sure we are in the right directory
+cd ~/uvic-course/scraper
+
 # activate python virtual environment (env is assumed to exist and have all requirements)
 source env/bin/activate
 
