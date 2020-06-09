@@ -37,14 +37,14 @@ def main():
 	)
 
 	parser.add_argument(
-		"--unprocessed (default False)",
+		"--unprocessed",
 		help="Skip processing of the scraped information into a more useful format?",
 		type=bool, 
 		default=False
 	)
 
 	parser.add_argument(
-		"--all  (default False)", 
+		"--all", 
 		help="When true, parse everything in the input directory.",
 		type=bool,
 		default=False
