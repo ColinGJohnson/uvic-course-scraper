@@ -52,6 +52,9 @@ def main():
 	collection = database[args.collection]
 
 	# iterate over all the courses in the input file
+	updated = 0
+	inserted = 0
+
 	for course in data:
 
 		# find the course to update by term and crn
@@ -67,10 +70,13 @@ def main():
 
 		if result.upserted_id is not None:
 			print(f'inserted {course["term"]} {course["subject"]}-{course["course_code"]}: {course["course_title"]}')
-		
+			inserted += 1
+
 		elif result.modified_count == 1:
 			print(f'updated {course["term"]} {course["subject"]}-{course["course_code"]}: {course["course_title"]}: ')
-		
+			updated += 1
+
+	print(f'SUMMARY: updated {updated}, inserted {inserted}')
 
 # if this file isn't being imported, run automatically
 if __name__ == "__main__":
