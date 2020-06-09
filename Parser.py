@@ -19,13 +19,13 @@ def main():
 
 	parser.add_argument(
 		"--indir",
-		help="Input directory", 
+		help="Input directory (default ./html/)", 
 		default="./html/"
 	)
 
 	parser.add_argument(
 		"--outdir", 
-		help="Output directory",
+		help="Output directory (default ./json/)",
 		default="./json/"
 	)
 
