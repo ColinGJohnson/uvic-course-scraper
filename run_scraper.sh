@@ -19,7 +19,7 @@ python3 ./Parser.py
 # upload changes to mongodb MONGODB_STR should be set in system environment variables
 for filename in ./json/*.json; do
     echo "Uploading $TERM..."
-    python3 ./Uploader.py --input="$TERM" --constr="$MONGODB_STR"
+    python3 ./Uploader.py --input="./json/$TERM.json" --constr="$MONGODB_STR"
 done
 
 echo "Course scraping complete!"
