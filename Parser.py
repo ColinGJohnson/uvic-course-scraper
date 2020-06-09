@@ -1,5 +1,5 @@
 import os
-import time
+import t
 import argparse
 import re
 import json
@@ -158,7 +158,7 @@ def convert(courses):
 					course['catalog_entry'] = section['catalog_entry']
 
 					# wait for a second to avoid rate limiting
-					time.sleep(1)
+					t.sleep(1)
 
 				except Exception:
 					print(f"invalid link: {section['catalog_entry']}")
