@@ -1,4 +1,5 @@
 import os
+import time
 import argparse
 import re
 import json
@@ -36,14 +37,14 @@ def main():
 	)
 
 	parser.add_argument(
-		"--unprocessed",
+		"--unprocessed (default False)",
 		help="Skip processing of the scraped information into a more useful format?",
 		type=bool, 
 		default=False
 	)
 
 	parser.add_argument(
-		"--all", 
+		"--all  (default False)", 
 		help="When true, parse everything in the input directory.",
 		type=bool,
 		default=False
@@ -154,6 +155,9 @@ def convert(courses):
 						course['calendar_entry'] = calendar_entry_link["href"]
 
 					course['catalog_entry'] = section['catalog_entry']
+
+					# wait for a second to avoid rate limiting
+					time.sleep(1)
 
 				except Exception:
 					print(f"invalid link: {section['catalog_entry']}")

@@ -1,5 +1,6 @@
 from os import listdir
 from os import makedirs
+import time
 import argparse
 import re
 import json
@@ -101,6 +102,9 @@ class SearchFormScraper:
 						print(f"Saved course search result as '{filename}'")
 					except Exception as e:
 						print(f"Failed to save '{filename}': ", e)
+
+				# wait for a second to avoid rate limiting
+				time.sleep(1)
 
 				# go back to the class search form
 				browser.back(1)
