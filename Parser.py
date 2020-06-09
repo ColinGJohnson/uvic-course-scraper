@@ -144,6 +144,7 @@ def convert(courses):
 
 			# associate calendar entry with course rather than section
 			# check for fucked links like "https://www.uvic.cahttp://web.uvic.ca/soci/courses_spring.php"
+			"""
 			if i == 0:
 				try:
 					browser.open(section['catalog_entry'])
@@ -161,6 +162,7 @@ def convert(courses):
 
 				except Exception:
 					print(f"invalid link: {section['catalog_entry']}")
+			"""
 
 			del section['catalog_entry']
 
