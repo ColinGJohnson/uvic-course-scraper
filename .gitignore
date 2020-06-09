@@ -1,10 +1,10 @@
 
 # virtual environment
-./env/
+env/
 
 # scraped pages
-./html/
-./json/
+html/
+json/
 
 # vs code
 .vscode
