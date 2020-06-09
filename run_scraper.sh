@@ -6,6 +6,7 @@ export TERM="202005"
 source env/bin/activate
 
 # clean up previous results
+echo "Removing html/json from previous runs..."
 rm -rf html/ json/
 
 # scrape search result pages

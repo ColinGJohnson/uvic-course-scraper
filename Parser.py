@@ -1,5 +1,5 @@
 import os
-import t
+import time as t
 import argparse
 import re
 import json
