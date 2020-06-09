@@ -1,6 +1,6 @@
 # the term to scrape data for
 # this should always be set to whatever the "current" term people are resgistering for is.
-export TERM="202005"
+export TERM="202009"
 
 # activate python virtual environment (env is assumed to exist and have all requirements)
 source env/bin/activate
