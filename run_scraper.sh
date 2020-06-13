@@ -3,7 +3,7 @@
 export TERM="202005"
 
 # make sure we are in the right directory
-cd ~/uvic-course/scraper
+cd ~/uvic-course-scraper
 
 # activate python virtual environment (env is assumed to exist and have all requirements)
 source env/bin/activate
