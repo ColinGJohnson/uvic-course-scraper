@@ -1,8 +1,15 @@
+import time
+import datetime
+
 import pymongo
 import argparse
 from pprint import pprint
 
 import json
+
+def timestamp():
+	return datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+
 
 def main():
 
@@ -69,11 +76,11 @@ def main():
 		result = collection.update_one(query, { '$set': course }, upsert=True)
 
 		if result.upserted_id is not None:
-			print(f'inserted {course["term"]} {course["subject"]}-{course["course_code"]}: {course["course_title"]}')
+			print(f'[{timestamp()}] inserted {course["term"]} {course["subject"]}-{course["course_code"]}: {course["course_title"]}')
 			inserted += 1
 
 		elif result.modified_count == 1:
-			print(f'updated {course["term"]} {course["subject"]}-{course["course_code"]}: {course["course_title"]}: ')
+			print(f'[{timestamp()}] updated {course["term"]} {course["subject"]}-{course["course_code"]}: {course["course_title"]}: ')
 			updated += 1
 
 	print(f'SUMMARY: updated {updated}, inserted {inserted}')
