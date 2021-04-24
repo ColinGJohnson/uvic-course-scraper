@@ -21,7 +21,6 @@ parser.add_argument("--input",
 
 args = parser.parse_args()
 load_dotenv()
-print(os.getenv('APPSYNC_URL'))
 
 # Use AWS4Auth to sign a requests session 
 # (see: https://pypi.org/project/requests-aws4auth/)
@@ -42,10 +41,12 @@ def send_graphql_query(session, query):
     response = session.request(
         url=APPSYNC_API_ENDPOINT_URL,
         method='POST',
-        json={'query': check_course_existance_query}
+        json={'query': query}
     )
 
     if response.status_code != 200:
+        print(query)
+        print(response.json())
         raise Exception(f"Query failed, response code: {request.status_code}.")
         return None
 
@@ -86,19 +87,23 @@ def check_course_exists(session, term, subject, course_code):
 def dict_to_graphql_mutation_input(object, level=0):
         fields = []
         for key in object.keys():
+            value_type = type(object[key])
 
-            if (type(object[key]) is list):
+            if (value_type is list):
                 list_fields = []
                 for item in object[key]:
                     list_fields.append(dict_to_graphql_mutation_input(item, level=level+1))
                 fields.append(f'{key}: [{", ".join(list_fields)}]')
 
-            elif(type(object[key]) is str):
-                value = object[key].replace('\n', ' ')
+            elif(value_type is str):
+                value = object[key].replace('\n', ' ').replace('"', '\\"')
                 fields.append(f'{key}: "{value}"')
 
+            elif(value_type is int):
+                fields.append(f'{key}: "{str(value)}"')
+
             else:
-                raise Exception(f"This function only works for str and list, not {type(object[key])}")
+                raise Exception(f"This function only works for str, int and list, not {type(object[key])}")
 
         result = f"{{{' '.join(fields)}}}"
         return f"input: {result}" if level == 0 else result
@@ -111,54 +116,46 @@ with open(args.input, 'r') as file:
     except Exception as e:
         print("Error while reading input file: ", e)
 data = json.loads(jsonstr)
-print(f'Found {len(data)} items in input file.')
+print(f'Found {len(data)} items in input file.\n')
 
 # iterate over all the courses in the input file
 updated = 0
 inserted = 0
-for course in data:
+for progress, course in enumerate(data):
 
     # check if the course already exists in the database
     id = check_course_exists(session, course['term'], course['subject'], course['course_code'])
 
     # update the existing course if it exists, otherwise create it
-    mutation = ""
+    action = ""
     if id:
-        print(f"found existing course with id: {id}")
         course['id'] = id
-        mutation = f"""
-        mutation UpdateCourse {{
-            updateCourse({dict_to_graphql_mutation_input(course)}) 
-            {{
-                id
-            }}
-        }}
-        """
+        action = "updateCourse"
         updated += 1
         
     else:
-        print(f"no course found, creating new database entry")
-        mutation = f"""
-        mutation CreateCourse {{
-            createCourse({dict_to_graphql_mutation_input(course)}) 
-            {{
-                id
-            }}
-        }}
-        """
+        action = "createCourse"
         inserted += 1
 
     # make the mutation
-    # response = session.request(
-    #     url=APPSYNC_API_ENDPOINT_URL,
-    #     method='POST',
-    #     json={'query': mutation}
-    # )
+    mutation = f"""
+    mutation CourseUpload {{
+        {action}({dict_to_graphql_mutation_input(course)}) 
+        {{
+            id
+        }}
+    }}
+    """
+    response = send_graphql_query(session, mutation)
+    
+    # check for any errors
+    if ("errors" in response):
+        raise Exception(f"Mutation failed: {mutation} with response {response}")
 
     # print a summary of the changes
-    action = "Updated" if id else "Created"
-    print(f'{action} {course["term"]} {course["subject"]}-{course["course_code"]}: {course["course_title"]}: ')
-
-    break
+    change = "Updated" if id else "Created"
+    print(f"({progress}/{len(data)})")
+    print(f'{change} {course["term"]} {course["subject"]}-{course["course_code"]}: {course["course_title"]}')
+    print(response, "\n")
 
 print(f'SUMMARY: updated {updated}, inserted {inserted}')
