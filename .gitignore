@@ -8,3 +8,6 @@ json/
 
 # vs code
 .vscode
+
+# secrets
+.env
