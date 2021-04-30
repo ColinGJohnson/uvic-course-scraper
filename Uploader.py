@@ -58,7 +58,7 @@ def check_course_exists(session, term, subject, course_code):
     query MyQuery {{
         coursesByCode(
             subjectCourse_code: {{
-                beginsWith: {{
+                eq: {{
                     course_code: "{course_code}", 
                     subject: "{subject}"
                 }}
@@ -163,5 +163,8 @@ for progress, course in enumerate(data):
     print(
         f'{change} {course["term"]} {course["subject"]}-{course["course_code"]}: {course["course_title"]}')
     print(response, "\n")
+
+    # wait a bit before doing the next course to avoid running into rate limits
+    time.sleep(0.1)
 
 print(f'SUMMARY: updated {updated}, inserted {inserted}')
