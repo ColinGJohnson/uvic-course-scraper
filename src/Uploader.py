@@ -13,11 +13,12 @@ parser = argparse.ArgumentParser(
     description="Upload course data to DynamoDB."
 )
 
-parser.add_argument("--input",
-                    help="JSON file which with to update the course documents.",
-                    type=str,
-                    required=True
-                    )
+parser.add_argument(
+    "--input",
+    help="JSON file which with to update the course documents.",
+    type=str,
+    required=True
+)
 
 args = parser.parse_args()
 load_dotenv()

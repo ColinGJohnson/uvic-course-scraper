@@ -1,0 +1,31 @@
+# this image has its own entrypoint which we want to override
+image: 
+  name: amazon/aws-cli
+  entrypoint: [""]
+
+# AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables are set in CI config.
+variables:
+  AWS_DEFAULT_REGION: us-west-2
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_REGISTRY: 532256195269.dkr.ecr.us-west-2.amazonaws.com
+  REPOSITORY_NAME: uviccoursescrapercdkstack-scraperrepositorya5fe187f-dqeqeoz6tyne
+
+stages:
+  - publish
+  - update
+
+# build the bot image and push it to ECR
+publish:
+  stage: publish
+  services:
+    - docker:dind
+  before_script:
+    - amazon-linux-extras install docker
+    - aws --version
+    - docker --version
+  script:
+    - docker build -t $DOCKER_REGISTRY/$REPOSITORY_NAME:latest .
+    - aws ecr get-login-password | docker login --username AWS --password-stdin $DOCKER_REGISTRY
+    - docker push $DOCKER_REGISTRY/$REPOSITORY_NAME:latest
+  only:
+    - master
