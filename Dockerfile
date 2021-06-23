@@ -16,4 +16,5 @@ RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2
     && ./aws/install
 
 # command to run on container start
+RUN chmod +x run.sh
 CMD [ "./run.sh" ]

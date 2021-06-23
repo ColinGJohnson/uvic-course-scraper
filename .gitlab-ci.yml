@@ -12,7 +12,6 @@ variables:
 
 stages:
   - publish
-  - update
 
 # build the bot image and push it to ECR
 publish:
