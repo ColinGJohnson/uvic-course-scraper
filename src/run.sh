@@ -3,10 +3,13 @@
 # exit on errors
 set -e
 
-# 05 -> Summer, 09 -> Fall, 01 -> Spring
-# Currently this line should be manually updated when a new schedule is released
-TERMS=('202105' '202109' '202201')
+echo "Starting scraper script..."
+python3 --version
+aws --version
 
+# 05 -> Summer, 09 -> Fall, 01 -> Spring
+# Currently this line should be manually updated when new schedules are released
+TERMS=('202109' '202201')
 for term in "${TERMS[@]}"; do
 
     # download search result pages as HTML
