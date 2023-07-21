@@ -1,7 +1,7 @@
 autopep8==1.5.7
 beautifulsoup4==4.6.3
 bs4==0.0.1
-certifi==2018.10.15
+certifi==2022.12.7
 chardet==3.0.4
 dnspython==1.16.0
 idna==2.7
