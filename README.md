@@ -1,3 +1,6 @@
+> [!CAUTION]
+> UVic has replaced their schedule search page! This script is no longer functional.
+
 # UVic Course Data Scraper
 
 "uvic-course-scraper" is a Python 3 web scraping script which makes use of [RoboBrowser](https://robobrowser.readthedocs.io/en/latest/) and [Beautiful Soup 4](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) gather data on current and past courses at the University of Victoria through [uvic.ca](https://www.uvic.ca/) and store those data in a json database file.
